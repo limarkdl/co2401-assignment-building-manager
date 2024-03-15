@@ -15,8 +15,8 @@ public class BuildingController
     private readonly LightManager lightManager;
     private readonly FireAlarmManager fireAlarmManager;
     private readonly DoorManager doorManager;
-    private readonly IWebService webService;
-    private readonly IEmailService emailService;
+    private readonly WebService webService;
+    private readonly EmailService emailService;
 
     private readonly List<string> normalStates = new List<string> { "closed", "out of hours", "open" };
     private readonly List<string> emergencyStates = new List<string> { "fire drill", "fire alarm" };
@@ -25,20 +25,24 @@ public class BuildingController
 
     public BuildingController(string id)
     {
-            if (id == null)
-            {
-                throw new ArgumentNullException(nameof(id), "ID cannot be null.");
-            }
+        if (id == null)
+        {
+            throw new ArgumentNullException(nameof(id), "ID cannot be null.");
+        }
 
-            SetBuildingID(id.ToLower());
+        SetBuildingID(id.ToLower());
         this.currentState = "out of hours";
         this.lastNormalState = "out of hours";
     }
 
     public BuildingController(string id, string startState)
     {
+        if (startState == null)
+        {
+                throw new ArgumentException("Argument Exception: BuildingController can only be initialised to the following states 'open', 'closed', 'out of hours'");
+        }
         SetBuildingID(id);
-
+        
         startState = startState.ToLower();
         if (normalStates.Contains(startState))
         {
@@ -56,8 +60,8 @@ public class BuildingController
         LightManager iLightManager,
         FireAlarmManager iFireAlarmManager,
         DoorManager iDoorManager,
-        IWebService iWebService,
-        IEmailService iEmailService)
+        WebService iWebService,
+        EmailService iEmailService)
     {
         SetBuildingID(id);
         this.currentState = "out of hours";
@@ -75,33 +79,7 @@ public class BuildingController
         return this.currentState;
     }
 
-    public bool SetCurrentState(string state)
-    {
-        state = state.ToLower();
-
-        if (state == this.currentState)
-        {
-            return true;
-        }
-
-        if (emergencyStates.Contains(this.currentState) && state == "out of hours")
-        {
-            state = this.lastNormalState;
-        }
-
-        if (normalStates.Contains(state) || emergencyStates.Contains(state))
-        {
-            if (normalStates.Contains(state))
-            {
-                this.lastNormalState = state;
-            }
-
-            this.currentState = state;
-            return true;
-        }
-
-        return false;
-    }
+       
 
     public string GetBuildingID()
     {
@@ -118,17 +96,67 @@ public class BuildingController
         this.buildingID = id.ToLower();
     }
 
+    public bool SetCurrentState(string state)
+    {
+        state = state.ToLower();
+
+        if (state == this.currentState)
+        {
+            return true;
+        }
+
+
+        if ((state == "out of hours" && (this.currentState == "fire drill" || this.currentState == "fire alarm")))
+        {
+            this.currentState = this.lastNormalState;
+            return true;
+        }
+
+        if (state == "open")
+        {
+            if (this.doorManager != null)
+                {
+                bool doorsOpened = this.doorManager.OpenAllDoors();
+                if (!doorsOpened)
+                {
+                    return false;
+                }
+            }
+            
+
+            this.currentState = state;
+            this.lastNormalState = state;
+            return true;
+        }
+
+            if (normalStates.Contains(this.currentState) && normalStates.Contains(state))
+        {
+            this.currentState = state;
+            this.lastNormalState = state;
+            return true;
+        }
+
+        if (emergencyStates.Contains(state))
+        {
+            this.currentState = state;
+            return true;
+        }
+
+        return false;
+    }
 
         public string GetStatusReport()
-    {
-        // TODO: 'Implement this method'
-        return "Hi";
+        {
+            var lightStatus = lightManager.GetStatus();
+            var doorStatus = doorManager.GetStatus();
+            var fireAlarmStatus = fireAlarmManager.GetStatus();
+
+            return $"{lightStatus}{doorStatus}{fireAlarmStatus}";
+        }
+
+
+
+
+
     }
-    
-
-    
-
-    
-
-}
 }

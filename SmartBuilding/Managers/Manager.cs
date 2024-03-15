@@ -2,11 +2,12 @@
 {
     public abstract class Manager
     {
-        private string status;
+        protected string status;
+        protected string type;
 
-        public string GetStatus()
+        public virtual string GetStatus()
         {
-            return this.status;
+            return this.type + this.status;
         }
     }
 }

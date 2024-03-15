@@ -6,8 +6,11 @@ using System.Threading.Tasks;
 
 namespace SmartBuilding.Services
 {
-    public interface IEmailService
-    {
+    public class EmailService { 
+
+        public EmailService()
+        {
+        }
         public void SendEmail(string EmailAddress, string subject, string message)
         {
             // TODO: 'Implement this method'

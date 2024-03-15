@@ -1,7 +1,11 @@
 ﻿using NUnit.Framework;
 using SmartBuilding;
 
-namespace L1_done
+using NSubstitute;
+using SmartBuilding.Managers;
+using SmartBuilding.Services;
+
+namespace L1
 {
 
     [TestFixture]
@@ -294,109 +298,164 @@ namespace L2
     [TestFixture]
     public class L2R1
     {
-        [TestCase("b123")]
-        [TestCase("a456")]
-        [TestCase("c789")]
-        public void Constructor_WithValidID_AssignsBuildingID(string expectedID)
-        {
-            // Act
-            var buildingController = new BuildingController(expectedID);
+        private BuildingController buildingController;
+        private readonly string initialID = "B123";
 
-            // Assert
-            Assert.AreEqual(expectedID, buildingController.GetBuildingID(), "The constructor should assign buildingID correctly.");
+        [SetUp]
+        public void SetUp()
+        {
+            // Setup for each test, buildingController starts in the "out of hours" state
+            buildingController = new BuildingController(initialID);
         }
 
-        [TestCase]
-        public void Constructor_WithNullID_ThrowsArgumentNullException()
+        [TestCase("closed", "out of hours", true)]
+        [TestCase("open", "out of hours", true)]
+        [TestCase("out of hours", "open", true)]
+        [TestCase("out of hours", "closed", true)]
+        public void SetCurrentState_ValidNormalTransitions_ReturnsTrue(string initialState, string newState, bool expected)
         {
             // Arrange
-            string nullID = null;
+            buildingController.SetCurrentState(initialState);
 
-            // Act & Assert
-            var ex = Assert.Throws<System.ArgumentNullException>(() => new BuildingController(nullID));
-            Assert.That(ex.ParamName, Is.EqualTo("id"), "Constructor should throw ArgumentNullException for null ID");
+            // Act
+            var result = buildingController.SetCurrentState(newState);
+
+            // Assert
+            Assert.AreEqual(expected, result, $"Transition from {initialState} to {newState} should be valid.");
         }
+
+        [TestCase("out of hours", "fire drill", true)]
+        [TestCase("open", "fire alarm", true)]
+        [TestCase("closed", "fire drill", true)]
+        public void SetCurrentState_NormalToEmergencyTransition_ReturnsTrue(string initialState, string newState, bool expected)
+        {
+            // Arrange
+            buildingController.SetCurrentState(initialState);
+
+            // Act
+            var result = buildingController.SetCurrentState(newState);
+
+            // Assert
+            Assert.AreEqual(expected, result, $"Transition from {initialState} to emergency state {newState} should be valid.");
+        }
+
+        [TestCase("fire drill", "out of hours", true)]
+        [TestCase("fire alarm", "out of hours", true)]
+        public void SetCurrentState_EmergencyToLastNormalState_ReturnsTrue(string emergencyState, string expectedReturnState, bool expected)
+        {
+            // Arrange
+            buildingController.SetCurrentState("open"); // Set to a known normal state
+            buildingController.SetCurrentState(emergencyState); // Transition to an emergency state
+
+            // Act
+            var result = buildingController.SetCurrentState("out of hours"); // Should transition back to last normal state
+
+            // Assert
+            Assert.AreEqual(expected, result, $"Transition from emergency state {emergencyState} to {expectedReturnState} should be valid.");
+        }
+
+        [Test]
+        public void SetCurrentState_InvalidTransition_ReturnsFalse()
+        {
+            // Arrange
+            buildingController.SetCurrentState("closed"); // Set to a known normal state
+
+            // Act
+            var result = buildingController.SetCurrentState("fire alarm"); // Direct transition to emergency state is valid
+            result &= buildingController.SetCurrentState("closed"); // Direct transition from emergency back to normal is invalid
+
+            // Assert
+            Assert.IsFalse(result, "Direct transition from emergency state back to normal should not be valid.");
+        }
+
+        [Test]
+        public void SetCurrentState_UnrecognizedState_ReturnsFalse()
+        {
+            // Arrange
+            var invalidState = "invalid";
+
+            // Act
+            var result = buildingController.SetCurrentState(invalidState);
+
+            // Assert
+            Assert.IsFalse(result, "Transition to an unrecognized state should return false.");
+        }
+
     }
 
     [TestFixture]
     public class L2R2
     {
-        [Test]
-        public void GetBuildingID_WhenSet_ReturnsCorrectID()
+        private BuildingController buildingController;
+        private readonly string initialID = "B123";
+
+        [SetUp]
+        public void SetUp()
         {
-            // Arrange
-            var expectedID = "b123";
-            var buildingController = new BuildingController(expectedID);
-
-            // Act
-            var actualID = buildingController.GetBuildingID();
-
-            // Assert
-            Assert.AreEqual(expectedID, actualID, "The building ID should be the same as the one set in the constructor.");
+            // Setup for each test, buildingController starts in the "out of hours" state
+            buildingController = new BuildingController(initialID);
         }
 
         [Test]
-        public void GetBuildingID_WhenSetWithLongID_ReturnsCorrectID()
+        public void SetCurrentState_SameState_ReturnsTrue()
         {
             // Arrange
-            var expectedID = new string('a', 10000);
-            var buildingController = new BuildingController(expectedID);
+            var initialState = "open";
+            buildingController.SetCurrentState(initialState);
 
             // Act
-            var actualID = buildingController.GetBuildingID();
+            var result = buildingController.SetCurrentState(initialState);
 
             // Assert
-            Assert.AreEqual(expectedID, actualID, "The building ID should be able to handle very long IDs.");
+            Assert.IsTrue(result, "Calling SetCurrentState with the current state should return true.");
         }
 
         [Test]
-        public void GetBuildingID_WhenSetWithEmptyString_ReturnsEmptyString()
+        public void SetCurrentState_SameState_KeepSameState()
         {
             // Arrange
-            var expectedID = string.Empty; // Empty ID
-            var buildingController = new BuildingController(expectedID);
+            var initialState = "open";
+            buildingController.SetCurrentState(initialState);
 
             // Act
-            var actualID = buildingController.GetBuildingID();
+            buildingController.SetCurrentState(initialState);
+            var result = buildingController.GetCurrentState();
+
 
             // Assert
-            Assert.AreEqual(expectedID, actualID, "The building ID should return an empty string if it was set to an empty string.");
-        }
-
-        [Test]
-        public void GetBuildingID_WhenCalledMultipleTimes_ReturnsSameValue()
-        {
-            // Arrange
-            var expectedID = "B123";
-            var buildingController = new BuildingController(expectedID);
-
-            // Act
-            var firstCallID = buildingController.GetBuildingID();
-            var secondCallID = buildingController.GetBuildingID();
-
-            // Assert
-            Assert.AreEqual(firstCallID, secondCallID, "The building ID should be immutable and return the same value on multiple calls.");
+            Assert.AreEqual(result, initialState, "Calling SetCurrentState with the current state should return true.");
         }
     }
 
     [TestFixture]
     public class L2R3
     {
-        [TestCase("TESTID")]
-        [TestCase("testid")]
-        [TestCase("TestID")]
-        [TestCase("tEsTiD")]
-        public void Constructor_WithValidID_SetsBuildingIDToLowercase(string id)
+        [TestCase("B123", "closed")]
+        [TestCase("B123", "CLOSED")]
+        [TestCase("B123", "closed")]
+        [TestCase("B123", "out of hours")]
+        [TestCase("B123", "OUT OF HOURS")]
+        [TestCase("B123", "open")]
+        [TestCase("B123", "OPEN")]
+        public void Constructor_WithValidStartState_InitializesCorrectly(string id, string startState)
         {
-            // Arrange
-            var id_to_pass = id;
-
             // Act
-            var buildingController = new BuildingController(id_to_pass);
-            var resultID = buildingController.GetBuildingID();
+            var buildingController = new BuildingController(id, startState);
 
             // Assert
-            Assert.AreEqual(id_to_pass.ToLower(), resultID, "Constructor should set buildingID to lowercase.");
+            Assert.AreEqual(id.ToLower(), buildingController.GetBuildingID(), "Building ID should match the ID set in constructor and be in lower case.");
+            Assert.AreEqual(startState.ToLower(), buildingController.GetCurrentState(), "Current state should match the start state set in constructor and be in lower case.");
+        }
+
+        [TestCase("B123", "invalid")]
+        [TestCase("B123", "")]
+        [TestCase("B123", " ")]
+        [TestCase("B123", null)]
+        public void Constructor_WithInvalidStartState_ThrowsArgumentException(string id, string startState)
+        {
+            // Act & Assert
+            var ex = Assert.Throws<ArgumentException>(() => new BuildingController(id, startState));
+            Assert.That(ex.Message, Is.EqualTo("Argument Exception: BuildingController can only be initialised to the following states 'open', 'closed', 'out of hours'"), "Should throw ArgumentException for invalid start states.");
         }
 
     }
@@ -407,109 +466,150 @@ namespace L3
     [TestFixture]
     public class L3R1
     {
-        [TestCase("TESTID")]
-        [TestCase("testid")]
-        [TestCase("TestID")]
-        [TestCase("tEsTiD")]
-        public void Constructor_WithValidID_SetsBuildingIDToLowercase(string id)
-        {
-            // Arrange
-            var id_to_pass = id;
-
-            // Act
-            var buildingController = new BuildingController(id_to_pass);
-            var resultID = buildingController.GetBuildingID();
-
-            // Assert
-            Assert.AreEqual(id_to_pass.ToLower(), resultID, "Constructor should set buildingID to lowercase.");
-        }
-
+       
     }
 
     [TestFixture]
     public class L3R2
     {
-        [TestCase("TESTID")]
-        [TestCase("testid")]
-        [TestCase("TestID")]
-        [TestCase("tEsTiD")]
-        public void Constructor_WithValidID_SetsBuildingIDToLowercase(string id)
-        {
-            // Arrange
-            var id_to_pass = id;
-
-            // Act
-            var buildingController = new BuildingController(id_to_pass);
-            var resultID = buildingController.GetBuildingID();
-
-            // Assert
-            Assert.AreEqual(id_to_pass.ToLower(), resultID, "Constructor should set buildingID to lowercase.");
-        }
-
+        // NO NEED TO IMPLEMENT OR TEST
     }
 
     [TestFixture]
     public class L3R3
     {
-        [TestCase("TESTID")]
-        [TestCase("testid")]
-        [TestCase("TestID")]
-        [TestCase("tEsTiD")]
-        public void Constructor_WithValidID_SetsBuildingIDToLowercase(string id)
+        private LightManager _lightManagerSub;
+        private FireAlarmManager _fireAlarmManagerSub;
+        private DoorManager _doorManagerSub;
+        private WebService _webServiceSub;
+        private EmailService _emailServiceSub;
+
+        [SetUp]
+        public void SetUp()
         {
-            // Arrange
-            var id_to_pass = id;
+            _lightManagerSub = Substitute.For<LightManager>();
+            _fireAlarmManagerSub = Substitute.For<FireAlarmManager>();
+            _doorManagerSub = Substitute.For<DoorManager>();
+            _webServiceSub = Substitute.For<WebService>();
+            _emailServiceSub = Substitute.For<EmailService>();
 
-            // Act
-            var buildingController = new BuildingController(id_to_pass);
-            var resultID = buildingController.GetBuildingID();
+            _lightManagerSub.GetStatus().Returns("Lights,OK,OK,FAULT,OK,OK,OK,OK,OK,OK,OK,");
+            _doorManagerSub.GetStatus().Returns("Doors,OK,OK,OK,OK,OK,OK,OK,OK,");
+            _fireAlarmManagerSub.GetStatus().Returns("FireAlarm,OK,OK,OK,OK,OK,OK,OK,OK,");
 
-            // Assert
-            Assert.AreEqual(id_to_pass.ToLower(), resultID, "Constructor should set buildingID to lowercase.");
         }
 
+        [Test]
+        public void GetStatusReport_All3Managers_ReturnStatuses()
+        {
+            // Arrange
+            var controller = new BuildingController("23", _lightManagerSub, _fireAlarmManagerSub, _doorManagerSub, _webServiceSub, _emailServiceSub);
+            
+            // Act
+            var result = controller.GetStatusReport();
+            
+            // Assert
+            Assert.AreEqual("Lights,OK,OK,FAULT,OK,OK,OK,OK,OK,OK,OK,Doors,OK,OK,OK,OK,OK,OK,OK,OK,FireAlarm,OK,OK,OK,OK,OK,OK,OK,OK,", result);
+        }
     }
 
     [TestFixture]
     public class L3R4
     {
-        [TestCase("TESTID")]
-        [TestCase("testid")]
-        [TestCase("TestID")]
-        [TestCase("tEsTiD")]
-        public void Constructor_WithValidID_SetsBuildingIDToLowercase(string id)
+        private LightManager _lightManagerSub;
+        private FireAlarmManager _fireAlarmManagerSub;
+        private DoorManager _doorManagerSub;
+        private WebService _webServiceSub;
+        private EmailService _emailServiceSub;
+
+        [SetUp]
+        public void SetUp()
+        {
+            _lightManagerSub = Substitute.For<LightManager>();
+            _fireAlarmManagerSub = Substitute.For<FireAlarmManager>();
+            _doorManagerSub = Substitute.For<DoorManager>();
+            _webServiceSub = Substitute.For<WebService>();
+            _emailServiceSub = Substitute.For<EmailService>();
+        }
+
+        [Test]
+        public void SetCurrentState_ToOpen_CallsOpenAllDoors_WhenDoorManagerIsNotNull()
         {
             // Arrange
-            var id_to_pass = id;
+            var buildingController = new BuildingController("23", _lightManagerSub, _fireAlarmManagerSub, _doorManagerSub, _webServiceSub, _emailServiceSub);
 
             // Act
-            var buildingController = new BuildingController(id_to_pass);
-            var resultID = buildingController.GetBuildingID();
+            buildingController.SetCurrentState("open");
 
             // Assert
-            Assert.AreEqual(id_to_pass.ToLower(), resultID, "Constructor should set buildingID to lowercase.");
+            _doorManagerSub.Received().OpenAllDoors();
         }
 
     }
+
     [TestFixture]
     public class L3R5
     {
-        [TestCase("TESTID")]
-        [TestCase("testid")]
-        [TestCase("TestID")]
-        [TestCase("tEsTiD")]
-        public void Constructor_WithValidID_SetsBuildingIDToLowercase(string id)
+        private LightManager _lightManagerSub;
+        private FireAlarmManager _fireAlarmManagerSub;
+        private DoorManager _doorManagerSub;
+        private WebService _webServiceSub;
+        private EmailService _emailServiceSub;
+
+        [SetUp]
+        public void SetUp()
         {
-            // Arrange
-            var id_to_pass = id;
-
-            // Act
-            var buildingController = new BuildingController(id_to_pass);
-            var resultID = buildingController.GetBuildingID();
-
-            // Assert
-            Assert.AreEqual(id_to_pass.ToLower(), resultID, "Constructor should set buildingID to lowercase.");
+            _lightManagerSub = Substitute.For<LightManager>();
+            _fireAlarmManagerSub = Substitute.For<FireAlarmManager>();
+            _doorManagerSub = Substitute.For<DoorManager>();
+            _webServiceSub = Substitute.For<WebService>();
+            _emailServiceSub = Substitute.For<EmailService>();
         }
 
+
+        [Test]
+        public void SetCurrentState_ToOpen_WhenDoorsSuccessfullyOpen_ReturnsTrueAndChangesState()
+        {
+            // Arrange
+            var _buildingController = new BuildingController("23", _lightManagerSub, _fireAlarmManagerSub, _doorManagerSub, _webServiceSub, _emailServiceSub);
+
+
+            // Act
+            var result = _buildingController.SetCurrentState("open");
+
+            // Assert
+            Assert.IsTrue(result, "SetCurrentState should return true when transitioning to 'open' is successful.");
+            Assert.AreEqual("open", _buildingController.GetCurrentState(), "The building state should be 'open' after successfully opening doors.");
+        }
     }
+}
+
+namespace L4
+{
+    [TestFixture]
+    public class L4R1
+    {
+
+
+    }
+
+    [TestFixture]
+    public class L4R2
+    {
+
+    }
+
+    [TestFixture]
+    public class L4R3
+    {
+
+    }
+
+    [TestFixture]
+    public class L4R4
+    {
+
+
+    }
+    
 }

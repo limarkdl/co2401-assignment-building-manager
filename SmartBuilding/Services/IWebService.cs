@@ -1,7 +1,8 @@
 ﻿namespace SmartBuilding.Services
 {
-    public interface IWebService
+    public class WebService
     {
+        public WebService() { }
         public void LogStateChange(string logDetails)
         {
             // TODO: 'Implement this method'

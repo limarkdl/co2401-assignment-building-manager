@@ -1,10 +1,16 @@
 ﻿namespace SmartBuilding.Managers
 {
-    public interface FireAlarmManager
+    public class FireAlarmManager : Manager
     {
-        public void SetAlarm(bool isActive)
+        public FireAlarmManager() {
+            type = "FireAlarm,";
+            status = "OK,OK,OK,OK,OK,OK,OK,OK,";
+        }
+
+        public bool SetAlarm(bool isActive)
         {
-            // TODO: 'Implement this method'
+            status = "OK,OK,OK,OK,OK,OK,OK,OK,";
+            return true;
         }
     }
 }
