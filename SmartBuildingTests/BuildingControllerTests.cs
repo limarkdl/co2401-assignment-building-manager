@@ -70,7 +70,7 @@ namespace L1
         public void GetBuildingID_WhenSetWithEmptyString_ReturnsEmptyString()
         {
             // Arrange
-            var expectedID = string.Empty; // Empty ID
+            var expectedID = string.Empty;
             var buildingController = new BuildingController(expectedID);
 
             // Act
@@ -227,7 +227,6 @@ namespace L1
         public void Setup()
         {
             buildingController = new BuildingController(initialID);
-            // Assuming the initial state is "out of hours"
         }
 
         [TestCase("closed")]
@@ -260,14 +259,14 @@ namespace L1
             Assert.AreEqual(initialState, buildingController.GetCurrentState(), "currentState should remain unchanged with invalid state.");
         }
 
-        [TestCase("closed", "fire alarm", "closed")] // Return to last normal state from emergency state
-        [TestCase("open", "fire drill", "open")]     // Return to last normal state from emergency state
+        [TestCase("closed", "fire alarm", "closed")] 
+        [TestCase("open", "fire drill", "open")]    
         public void SetCurrentState_FromEmergencyState_ReturnsToLastNormalState(string lastNormalState, string emergencyState, string expectedState)
         {
-            // Arrange - Set initial state to a known normal state
+            // Arrange
             buildingController.SetCurrentState(lastNormalState);
 
-            // Act - Set to emergency state, then to "out of hours" to trigger return to last normal state
+            // Act
             buildingController.SetCurrentState(emergencyState);
             buildingController.SetCurrentState("out of hours");
 
@@ -304,7 +303,6 @@ namespace L2
         [SetUp]
         public void SetUp()
         {
-            // Setup for each test, buildingController starts in the "out of hours" state
             buildingController = new BuildingController(initialID);
         }
 
@@ -344,11 +342,11 @@ namespace L2
         public void SetCurrentState_EmergencyToLastNormalState_ReturnsTrue(string emergencyState, string expectedReturnState, bool expected)
         {
             // Arrange
-            buildingController.SetCurrentState("open"); // Set to a known normal state
-            buildingController.SetCurrentState(emergencyState); // Transition to an emergency state
+            buildingController.SetCurrentState("open");
+            buildingController.SetCurrentState(emergencyState);
 
             // Act
-            var result = buildingController.SetCurrentState("out of hours"); // Should transition back to last normal state
+            var result = buildingController.SetCurrentState("out of hours");
 
             // Assert
             Assert.AreEqual(expected, result, $"Transition from emergency state {emergencyState} to {expectedReturnState} should be valid.");
@@ -358,11 +356,11 @@ namespace L2
         public void SetCurrentState_InvalidTransition_ReturnsFalse()
         {
             // Arrange
-            buildingController.SetCurrentState("closed"); // Set to a known normal state
+            buildingController.SetCurrentState("closed");
 
             // Act
-            var result = buildingController.SetCurrentState("fire alarm"); // Direct transition to emergency state is valid
-            result &= buildingController.SetCurrentState("closed"); // Direct transition from emergency back to normal is invalid
+            var result = buildingController.SetCurrentState("fire alarm");
+            result &= buildingController.SetCurrentState("closed"); 
 
             // Assert
             Assert.IsFalse(result, "Direct transition from emergency state back to normal should not be valid.");
@@ -392,7 +390,6 @@ namespace L2
         [SetUp]
         public void SetUp()
         {
-            // Setup for each test, buildingController starts in the "out of hours" state
             buildingController = new BuildingController(initialID);
         }
 
@@ -466,7 +463,43 @@ namespace L3
     [TestFixture]
     public class L3R1
     {
-       
+        private LightManager _lightManagerSub;
+        private FireAlarmManager _fireAlarmManagerSub;
+        private DoorManager _doorManagerSub;
+        private WebService _webServiceSub;
+        private EmailService _emailServiceSub;
+
+        [SetUp]
+        public void SetUp()
+        {
+            _lightManagerSub = Substitute.For<LightManager>();
+            _fireAlarmManagerSub = Substitute.For<FireAlarmManager>();
+            _doorManagerSub = Substitute.For<DoorManager>();
+            _webServiceSub = Substitute.For<WebService>();
+            _emailServiceSub = Substitute.For<EmailService>();
+
+
+
+        }
+        [Test]
+        public void Constructor_WhenCalled_InitializesDependenciesCorrectly()
+        {
+            // Arrange & Act
+            var buildingController = new BuildingController("Building1", _lightManagerSub, _fireAlarmManagerSub, _doorManagerSub, _webServiceSub, _emailServiceSub);
+
+            // Assert
+            Assert.IsNotNull(buildingController);
+        }
+
+        [Test]
+        public void Constructor_WhenCalled_SetsInitialStateCorrectly()
+        {
+            // Arrange & Act
+            var buildingController = new BuildingController("Building1", _lightManagerSub, _fireAlarmManagerSub, _doorManagerSub, _webServiceSub, _emailServiceSub);
+
+            // Assert
+            Assert.AreEqual("out of hours", buildingController.GetCurrentState());
+        }
     }
 
     [TestFixture]
@@ -496,6 +529,7 @@ namespace L3
             _lightManagerSub.GetStatus().Returns("Lights,OK,OK,FAULT,OK,OK,OK,OK,OK,OK,OK,");
             _doorManagerSub.GetStatus().Returns("Doors,OK,OK,OK,OK,OK,OK,OK,OK,");
             _fireAlarmManagerSub.GetStatus().Returns("FireAlarm,OK,OK,OK,OK,OK,OK,OK,OK,");
+
 
         }
 
