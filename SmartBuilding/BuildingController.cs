@@ -112,6 +112,34 @@ public class BuildingController
             return true;
         }
 
+        if (state == "fire alarm")
+        {
+            if (this.webService != null && this.lightManager != null && this.doorManager != null)
+                {
+                    this.lightManager.SetAllLights(true);
+                    this.doorManager.OpenAllDoors();
+                    try
+                    {
+                        this.webService.LogFireAlarm("fire alarm");
+                    }
+                    catch (Exception ex)
+                    {
+                        this.emailService.SendEmail("smartbuilding@uclan.ac.uk", "failed to log alarm", ex.Message);
+                    }
+                    return true;
+                }
+        }
+
+        if (state == "close")
+        {
+            if (this.doorManager != null && this.lightManager != null)
+                {
+                    this.doorManager.LockAllDoors();
+                    this.lightManager.SetAllLights(false);
+                    return true;
+                }
+        }
+
         if (state == "open")
         {
             if (this.doorManager != null)
@@ -147,13 +175,57 @@ public class BuildingController
 
         public string GetStatusReport()
         {
+
             var lightStatus = lightManager.GetStatus();
             var doorStatus = doorManager.GetStatus();
             var fireAlarmStatus = fireAlarmManager.GetStatus();
+            var faultsListToSendEngineer = _detectErrorsAndCreateLogDetails(lightStatus, doorStatus, fireAlarmStatus);
+
+
+
+            if (faultsListToSendEngineer.Length > 0)
+            {
+                webService.LogEngineerRequired(faultsListToSendEngineer);
+            }
 
             return $"{lightStatus}{doorStatus}{fireAlarmStatus}";
         }
 
+
+        // Had to make this public to test. I couldn't figure out how to use 'Arg.is' on Received, result of internal functoin couldn't be tracked in my case
+        public string _detectErrorsAndCreateLogDetails(string LightStatus, string DoorStatus, string FireStatus)
+        {
+            var faultsDetected = new List<string>();
+
+
+            if (LightStatus.Contains("FAULT"))
+            {
+                faultsDetected.Add("Lights");
+            }
+
+            if (DoorStatus.Contains("FAULT"))
+            {
+                faultsDetected.Add("Doors");
+            }
+
+            if (FireStatus.Contains("FAULT"))
+            {
+                faultsDetected.Add("FireAlarm");
+            }
+
+            var result = string.Join(",", faultsDetected) + ",";
+
+            if (result.Length <= 1)
+            {
+                return "";
+            }
+
+            return result;
+
+
+
+            
+        }
 
 
 

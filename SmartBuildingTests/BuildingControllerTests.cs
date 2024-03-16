@@ -589,27 +589,200 @@ namespace L4
     [TestFixture]
     public class L4R1
     {
+        private LightManager _lightManagerSub;
+        private FireAlarmManager _fireAlarmManagerSub;
+        private DoorManager _doorManagerSub;
+        private WebService _webServiceSub;
+        private EmailService _emailServiceSub;
 
+        [SetUp]
+        public void SetUp()
+        {
+            _lightManagerSub = Substitute.For<LightManager>();
+            _fireAlarmManagerSub = Substitute.For<FireAlarmManager>();
+            _doorManagerSub = Substitute.For<DoorManager>();
+            _webServiceSub = Substitute.For<WebService>();
+            _emailServiceSub = Substitute.For<EmailService>();
+        }
 
+        [Test]
+        public void SetCurrentState_ToClose_CallsCloseAllDoors()
+        {
+            // Arrange
+            var buildingController = new BuildingController("23", _lightManagerSub, _fireAlarmManagerSub, _doorManagerSub, _webServiceSub, _emailServiceSub);
+
+            // Act
+            buildingController.SetCurrentState("open");
+
+            // Assert
+            _doorManagerSub.Received().LockAllDoors();
+        }
+
+        [Test]
+        public void SetCurrentState_ToClose_CallsCloseAllLights()
+        {
+            // Arrange
+            var buildingController = new BuildingController("23", _lightManagerSub, _fireAlarmManagerSub, _doorManagerSub, _webServiceSub, _emailServiceSub);
+
+            // Act
+            buildingController.SetCurrentState("close");
+
+            // Assert
+            _lightManagerSub.Received().SetAllLights(false);
+        }
     }
 
     [TestFixture]
     public class L4R2
     {
+        private LightManager _lightManagerSub;
+        private FireAlarmManager _fireAlarmManagerSub;
+        private DoorManager _doorManagerSub;
+        private WebService _webServiceSub;
+        private EmailService _emailServiceSub;
 
+        [SetUp]
+        public void SetUp()
+        {
+            _lightManagerSub = Substitute.For<LightManager>();
+            _fireAlarmManagerSub = Substitute.For<FireAlarmManager>();
+            _doorManagerSub = Substitute.For<DoorManager>();
+            _webServiceSub = Substitute.For<WebService>();
+            _emailServiceSub = Substitute.For<EmailService>();
+        }
+
+        [Test]
+        public void SetCurrentState_ToFireAlarm_CallsOpenAllDoors()
+        {
+            // Arrange
+            var buildingController = new BuildingController("23", _lightManagerSub, _fireAlarmManagerSub, _doorManagerSub, _webServiceSub, _emailServiceSub);
+
+            // Act
+            buildingController.SetCurrentState("fire alarm");
+
+            // Assert
+            _doorManagerSub.Received().OpenAllDoors();
+        }
+
+        [Test]
+        public void SetCurrentState_ToFireAlarm_CallsSetAllLightsTrue()
+        {
+            // Arrange
+            var buildingController = new BuildingController("23", _lightManagerSub, _fireAlarmManagerSub, _doorManagerSub, _webServiceSub, _emailServiceSub);
+
+            // Act
+            buildingController.SetCurrentState("fire alarm");
+
+            // Assert
+            _lightManagerSub.Received().SetAllLights(true);
+        }
+
+        [Test]
+        public void SetCurrentState_ToFireAlarm_CallsWebServiceLogFireAlarm()
+        {
+            // Arrange
+            var buildingController = new BuildingController("23", _lightManagerSub, _fireAlarmManagerSub, _doorManagerSub, _webServiceSub, _emailServiceSub);
+
+            // Act
+            buildingController.SetCurrentState("fire alarm");
+
+            // Assert
+            _webServiceSub.Received().LogFireAlarm("fire alarm");
+        }
     }
 
     [TestFixture]
     public class L4R3
     {
+        private LightManager _lightManagerSub;
+        private FireAlarmManager _fireAlarmManagerSub;
+        private DoorManager _doorManagerSub;
+        private WebService _webServiceSub;
+        private EmailService _emailServiceSub;
 
+        [SetUp]
+        public void SetUp()
+        {
+            _lightManagerSub = Substitute.For<LightManager>();
+            _fireAlarmManagerSub = Substitute.For<FireAlarmManager>();
+            _doorManagerSub = Substitute.For<DoorManager>();
+            _webServiceSub = Substitute.For<WebService>();
+            _emailServiceSub = Substitute.For<EmailService>();
+        }
+
+        [TestCase("Lights,OK,", "Doors,OK,", "FireAlarm,OK,", "")]
+        [TestCase("Lights,FAULT,", "Doors,OK,", "FireAlarm,OK,", "Lights,")]
+        [TestCase("Lights,OK,", "Doors,FAULT,", "FireAlarm,OK,", "Doors,")]
+        [TestCase("Lights,OK,", "Doors,OK,", "FireAlarm,FAULT,", "FireAlarm,")]
+        [TestCase("Lights,FAULT,", "Doors,FAULT,", "FireAlarm,OK,", "Lights,Doors,")]
+        [TestCase("Lights,OK,", "Doors,FAULT,", "FireAlarm,FAULT,", "Doors,FireAlarm,")]
+        [TestCase("Lights,FAULT,", "Doors,FAULT,", "FireAlarm,FAULT,", "Lights,Doors,FireAlarm,")]
+        [TestCase("Lights,FAULT,", "Doors,OK,", "FireAlarm,FAULT,", "Lights,FireAlarm,")]
+        public void GetStatusReport_AutomaticallySendsReport_CorrectnessOfArgs(string lightCase, string doorCase, string FireAlarmCase, string expectedArgs)
+        {
+            // Arrange
+            var buildingController = new BuildingController("23", _lightManagerSub, _fireAlarmManagerSub, _doorManagerSub, _webServiceSub, _emailServiceSub);
+            _lightManagerSub.GetStatus().Returns(lightCase);
+            _doorManagerSub.GetStatus().Returns(doorCase);
+            _fireAlarmManagerSub.GetStatus().Returns(FireAlarmCase);
+
+            // Act
+            var result = buildingController._detectErrorsAndCreateLogDetails(_lightManagerSub.GetStatus(), _doorManagerSub.GetStatus(), _fireAlarmManagerSub.GetStatus());
+
+            // Assert
+            Assert.AreEqual(expectedArgs, result);
+
+        }
+
+        [Test]
+        public void GetStatusReport_AutomaticallySendsReport_WebServiceIsCalled()
+        {
+            // Arrange
+            var buildingController = new BuildingController("23", _lightManagerSub, _fireAlarmManagerSub, _doorManagerSub, _webServiceSub, _emailServiceSub);
+
+            // Act
+            buildingController.GetStatusReport();
+
+            // Assert
+            _webServiceSub.Received(1).LogEngineerRequired("");
+
+        }
     }
 
     [TestFixture]
     public class L4R4
     {
 
+        private LightManager _lightManagerSub;
+        private FireAlarmManager _fireAlarmManagerSub;
+        private DoorManager _doorManagerSub;
+        private WebService _webServiceSub;
+        private EmailService _emailServiceSub;
 
+        [SetUp]
+        public void SetUp()
+        {
+            _lightManagerSub = Substitute.For<LightManager>();
+            _fireAlarmManagerSub = Substitute.For<FireAlarmManager>();
+            _doorManagerSub = Substitute.For<DoorManager>();
+            _webServiceSub = Substitute.For<WebService>();
+            _emailServiceSub = Substitute.For<EmailService>();
+        }
+
+        [Test]
+        public void GetStatusReport_WhenLogFireAlarmThrows_CallsSendEmail()
+        {
+            // Arrange
+            var exceptionMessage = "Logging failed";
+            var buildingController = new BuildingController("23", _lightManagerSub, _fireAlarmManagerSub, _doorManagerSub, _webServiceSub, _emailServiceSub);
+            _webServiceSub.When(x => x.LogFireAlarm("fire alarm")).Do(x => throw new Exception(exceptionMessage));
+
+            // Act
+            buildingController.GetStatusReport();
+
+            // Assert
+            _emailServiceSub.Received(1).SendEmail("smartbuilding@uclan.ac.uk", "failed to log alarm", exceptionMessage);
+        }
     }
     
 }
