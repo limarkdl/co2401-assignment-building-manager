@@ -1,13 +1,11 @@
-﻿using NUnit.Framework;
+﻿using NSubstitute;
+using NUnit.Framework;
 using SmartBuilding;
-
-using NSubstitute;
 using SmartBuilding.Managers;
 using SmartBuilding.Services;
 
 namespace L1
 {
-
     [TestFixture]
     public class L1R1
     {
@@ -20,7 +18,8 @@ namespace L1
             var buildingController = new BuildingController(expectedID);
 
             // Assert
-            Assert.AreEqual(expectedID, buildingController.GetBuildingID(), "The constructor should assign buildingID correctly.");
+            Assert.AreEqual(expectedID, buildingController.GetBuildingID(),
+                "The constructor should assign buildingID correctly.");
         }
 
         [TestCase]
@@ -30,7 +29,7 @@ namespace L1
             string nullID = null;
 
             // Act & Assert
-            var ex = Assert.Throws<System.ArgumentNullException>(() => new BuildingController(nullID));
+            var ex = Assert.Throws<ArgumentNullException>(() => new BuildingController(nullID));
             Assert.That(ex.ParamName, Is.EqualTo("id"), "Constructor should throw ArgumentNullException for null ID");
         }
     }
@@ -49,7 +48,8 @@ namespace L1
             var actualID = buildingController.GetBuildingID();
 
             // Assert
-            Assert.AreEqual(expectedID, actualID, "The building ID should be the same as the one set in the constructor.");
+            Assert.AreEqual(expectedID, actualID,
+                "The building ID should be the same as the one set in the constructor.");
         }
 
         [Test]
@@ -77,7 +77,8 @@ namespace L1
             var actualID = buildingController.GetBuildingID();
 
             // Assert
-            Assert.AreEqual(expectedID, actualID, "The building ID should return an empty string if it was set to an empty string.");
+            Assert.AreEqual(expectedID, actualID,
+                "The building ID should return an empty string if it was set to an empty string.");
         }
 
         [Test]
@@ -92,7 +93,8 @@ namespace L1
             var secondCallID = buildingController.GetBuildingID();
 
             // Assert
-            Assert.AreEqual(firstCallID, secondCallID, "The building ID should be immutable and return the same value on multiple calls.");
+            Assert.AreEqual(firstCallID, secondCallID,
+                "The building ID should be immutable and return the same value on multiple calls.");
         }
     }
 
@@ -115,7 +117,6 @@ namespace L1
             // Assert
             Assert.AreEqual(id_to_pass.ToLower(), resultID, "Constructor should set buildingID to lowercase.");
         }
-
     }
 
     [TestFixture]
@@ -147,7 +148,8 @@ namespace L1
 
             // Act & Assert
             var ex = Assert.Throws<ArgumentNullException>(() => buildingController.SetBuildingID(null));
-            Assert.That(ex.ParamName, Is.EqualTo("id"), "SetBuildingID should throw ArgumentNullException for null input.");
+            Assert.That(ex.ParamName, Is.EqualTo("id"),
+                "SetBuildingID should throw ArgumentNullException for null input.");
         }
 
         [Test]
@@ -162,7 +164,8 @@ namespace L1
             var actualID = buildingController.GetBuildingID();
 
             // Assert
-            Assert.AreEqual(expectedID, actualID, "SetBuildingID should set the building ID to an empty string if an empty string is passed.");
+            Assert.AreEqual(expectedID, actualID,
+                "SetBuildingID should set the building ID to an empty string if an empty string is passed.");
         }
     }
 
@@ -214,20 +217,19 @@ namespace L1
             // Assert
             Assert.AreEqual(expectedState, state, "GetCurrentState should return the new state after a change.");
         }
-
     }
 
     [TestFixture]
     public class L1R7
     {
-        private string initialID = "B123";
-        private BuildingController buildingController;
-
         [SetUp]
         public void Setup()
         {
             buildingController = new BuildingController(initialID);
         }
+
+        private readonly string initialID = "B123";
+        private BuildingController buildingController;
 
         [TestCase("closed")]
         [TestCase("out of hours")]
@@ -241,27 +243,30 @@ namespace L1
 
             // Assert
             Assert.IsTrue(result, $"SetCurrentState should return true for valid state '{validState}'.");
-            Assert.AreEqual(validState.ToLower(), buildingController.GetCurrentState(), $"currentState should be set to '{validState}'.");
+            Assert.AreEqual(validState.ToLower(), buildingController.GetCurrentState(),
+                $"currentState should be set to '{validState}'.");
         }
 
         [Test]
         public void SetCurrentState_InvalidState_ReturnsFalseAndStateUnchanged()
         {
             // Arrange
-            string invalidState = "invalid";
-            string initialState = buildingController.GetCurrentState();
+            var invalidState = "invalid";
+            var initialState = buildingController.GetCurrentState();
 
             // Act
             var result = buildingController.SetCurrentState(invalidState);
 
             // Assert
             Assert.IsFalse(result, "SetCurrentState should return false for invalid state.");
-            Assert.AreEqual(initialState, buildingController.GetCurrentState(), "currentState should remain unchanged with invalid state.");
+            Assert.AreEqual(initialState, buildingController.GetCurrentState(),
+                "currentState should remain unchanged with invalid state.");
         }
 
-        [TestCase("closed", "fire alarm", "closed")] 
-        [TestCase("open", "fire drill", "open")]    
-        public void SetCurrentState_FromEmergencyState_ReturnsToLastNormalState(string lastNormalState, string emergencyState, string expectedState)
+        [TestCase("closed", "fire alarm", "closed")]
+        [TestCase("open", "fire drill", "open")]
+        public void SetCurrentState_FromEmergencyState_ReturnsToLastNormalState(string lastNormalState,
+            string emergencyState, string expectedState)
         {
             // Arrange
             buildingController.SetCurrentState(lastNormalState);
@@ -272,14 +277,15 @@ namespace L1
 
             // Assert
             var currentState = buildingController.GetCurrentState();
-            Assert.AreEqual(expectedState.ToLower(), currentState, "Should return to the last normal state after an emergency.");
+            Assert.AreEqual(expectedState.ToLower(), currentState,
+                "Should return to the last normal state after an emergency.");
         }
 
         [Test]
         public void SetCurrentState_SameState_ReturnsTrueAndStateUnchanged()
         {
             // Arrange
-            string initialState = "open";
+            var initialState = "open";
             buildingController.SetCurrentState(initialState);
 
             // Act
@@ -287,7 +293,8 @@ namespace L1
 
             // Assert
             Assert.IsTrue(result, "SetCurrentState should return true when setting the same state.");
-            Assert.AreEqual(initialState, buildingController.GetCurrentState(), "currentState should remain unchanged when setting the same state.");
+            Assert.AreEqual(initialState, buildingController.GetCurrentState(),
+                "currentState should remain unchanged when setting the same state.");
         }
     }
 }
@@ -297,20 +304,21 @@ namespace L2
     [TestFixture]
     public class L2R1
     {
-        private BuildingController buildingController;
-        private readonly string initialID = "B123";
-
         [SetUp]
         public void SetUp()
         {
             buildingController = new BuildingController(initialID);
         }
 
+        private BuildingController buildingController;
+        private readonly string initialID = "B123";
+
         [TestCase("closed", "out of hours", true)]
         [TestCase("open", "out of hours", true)]
         [TestCase("out of hours", "open", true)]
         [TestCase("out of hours", "closed", true)]
-        public void SetCurrentState_ValidNormalTransitions_ReturnsTrue(string initialState, string newState, bool expected)
+        public void SetCurrentState_ValidNormalTransitions_ReturnsTrue(string initialState, string newState,
+            bool expected)
         {
             // Arrange
             buildingController.SetCurrentState(initialState);
@@ -325,7 +333,8 @@ namespace L2
         [TestCase("out of hours", "fire drill", true)]
         [TestCase("open", "fire alarm", true)]
         [TestCase("closed", "fire drill", true)]
-        public void SetCurrentState_NormalToEmergencyTransition_ReturnsTrue(string initialState, string newState, bool expected)
+        public void SetCurrentState_NormalToEmergencyTransition_ReturnsTrue(string initialState, string newState,
+            bool expected)
         {
             // Arrange
             buildingController.SetCurrentState(initialState);
@@ -334,12 +343,14 @@ namespace L2
             var result = buildingController.SetCurrentState(newState);
 
             // Assert
-            Assert.AreEqual(expected, result, $"Transition from {initialState} to emergency state {newState} should be valid.");
+            Assert.AreEqual(expected, result,
+                $"Transition from {initialState} to emergency state {newState} should be valid.");
         }
 
         [TestCase("fire drill", "out of hours", true)]
         [TestCase("fire alarm", "out of hours", true)]
-        public void SetCurrentState_EmergencyToLastNormalState_ReturnsTrue(string emergencyState, string expectedReturnState, bool expected)
+        public void SetCurrentState_EmergencyToLastNormalState_ReturnsTrue(string emergencyState,
+            string expectedReturnState, bool expected)
         {
             // Arrange
             buildingController.SetCurrentState("open");
@@ -349,7 +360,8 @@ namespace L2
             var result = buildingController.SetCurrentState("out of hours");
 
             // Assert
-            Assert.AreEqual(expected, result, $"Transition from emergency state {emergencyState} to {expectedReturnState} should be valid.");
+            Assert.AreEqual(expected, result,
+                $"Transition from emergency state {emergencyState} to {expectedReturnState} should be valid.");
         }
 
         [Test]
@@ -360,7 +372,7 @@ namespace L2
 
             // Act
             var result = buildingController.SetCurrentState("fire alarm");
-            result &= buildingController.SetCurrentState("closed"); 
+            result &= buildingController.SetCurrentState("closed");
 
             // Assert
             Assert.IsFalse(result, "Direct transition from emergency state back to normal should not be valid.");
@@ -378,20 +390,19 @@ namespace L2
             // Assert
             Assert.IsFalse(result, "Transition to an unrecognized state should return false.");
         }
-
     }
 
     [TestFixture]
     public class L2R2
     {
-        private BuildingController buildingController;
-        private readonly string initialID = "B123";
-
         [SetUp]
         public void SetUp()
         {
             buildingController = new BuildingController(initialID);
         }
+
+        private BuildingController buildingController;
+        private readonly string initialID = "B123";
 
         [Test]
         public void SetCurrentState_SameState_ReturnsTrue()
@@ -440,8 +451,10 @@ namespace L2
             var buildingController = new BuildingController(id, startState);
 
             // Assert
-            Assert.AreEqual(id.ToLower(), buildingController.GetBuildingID(), "Building ID should match the ID set in constructor and be in lower case.");
-            Assert.AreEqual(startState.ToLower(), buildingController.GetCurrentState(), "Current state should match the start state set in constructor and be in lower case.");
+            Assert.AreEqual(id.ToLower(), buildingController.GetBuildingID(),
+                "Building ID should match the ID set in constructor and be in lower case.");
+            Assert.AreEqual(startState.ToLower(), buildingController.GetCurrentState(),
+                "Current state should match the start state set in constructor and be in lower case.");
         }
 
         [TestCase("B123", "invalid")]
@@ -452,9 +465,11 @@ namespace L2
         {
             // Act & Assert
             var ex = Assert.Throws<ArgumentException>(() => new BuildingController(id, startState));
-            Assert.That(ex.Message, Is.EqualTo("Argument Exception: BuildingController can only be initialised to the following states 'open', 'closed', 'out of hours'"), "Should throw ArgumentException for invalid start states.");
+            Assert.That(ex.Message,
+                Is.EqualTo(
+                    "Argument Exception: BuildingController can only be initialised to the following states 'open', 'closed', 'out of hours'"),
+                "Should throw ArgumentException for invalid start states.");
         }
-
     }
 }
 
@@ -463,29 +478,28 @@ namespace L3
     [TestFixture]
     public class L3R1
     {
-        private LightManager _lightManagerSub;
-        private FireAlarmManager _fireAlarmManagerSub;
-        private DoorManager _doorManagerSub;
-        private WebService _webServiceSub;
-        private EmailService _emailServiceSub;
-
         [SetUp]
         public void SetUp()
         {
-            _lightManagerSub = Substitute.For<LightManager>();
-            _fireAlarmManagerSub = Substitute.For<FireAlarmManager>();
-            _doorManagerSub = Substitute.For<DoorManager>();
+            _iLightManagerSub = Substitute.For<ILightManager>();
+            _iFireAlarmManagerSub = Substitute.For<IFireAlarmManager>();
+            _iDoorManagerSub = Substitute.For<IDoorManager>();
             _webServiceSub = Substitute.For<WebService>();
             _emailServiceSub = Substitute.For<EmailService>();
-
-
-
         }
+
+        private ILightManager _iLightManagerSub;
+        private IFireAlarmManager _iFireAlarmManagerSub;
+        private IDoorManager _iDoorManagerSub;
+        private WebService _webServiceSub;
+        private EmailService _emailServiceSub;
+
         [Test]
         public void Constructor_WhenCalled_InitializesDependenciesCorrectly()
         {
             // Arrange & Act
-            var buildingController = new BuildingController("Building1", _lightManagerSub, _fireAlarmManagerSub, _doorManagerSub, _webServiceSub, _emailServiceSub);
+            var buildingController = new BuildingController("Building1", _iLightManagerSub, _iFireAlarmManagerSub,
+                _iDoorManagerSub, _webServiceSub, _emailServiceSub);
 
             // Assert
             Assert.IsNotNull(buildingController);
@@ -495,7 +509,8 @@ namespace L3
         public void Constructor_WhenCalled_SetsInitialStateCorrectly()
         {
             // Arrange & Act
-            var buildingController = new BuildingController("Building1", _lightManagerSub, _fireAlarmManagerSub, _doorManagerSub, _webServiceSub, _emailServiceSub);
+            var buildingController = new BuildingController("Building1", _iLightManagerSub, _iFireAlarmManagerSub,
+                _iDoorManagerSub, _webServiceSub, _emailServiceSub);
 
             // Assert
             Assert.AreEqual("out of hours", buildingController.GetCurrentState());
@@ -511,109 +526,115 @@ namespace L3
     [TestFixture]
     public class L3R3
     {
-        private LightManager _lightManagerSub;
-        private FireAlarmManager _fireAlarmManagerSub;
-        private DoorManager _doorManagerSub;
-        private WebService _webServiceSub;
-        private EmailService _emailServiceSub;
-
         [SetUp]
         public void SetUp()
         {
-            _lightManagerSub = Substitute.For<LightManager>();
-            _fireAlarmManagerSub = Substitute.For<FireAlarmManager>();
-            _doorManagerSub = Substitute.For<DoorManager>();
+            _iLightManagerSub = Substitute.For<ILightManager>();
+            _iFireAlarmManagerSub = Substitute.For<IFireAlarmManager>();
+            _iDoorManagerSub = Substitute.For<IDoorManager>();
             _webServiceSub = Substitute.For<WebService>();
             _emailServiceSub = Substitute.For<EmailService>();
 
-            _lightManagerSub.GetStatus().Returns("Lights,OK,OK,FAULT,OK,OK,OK,OK,OK,OK,OK,");
-            _doorManagerSub.GetStatus().Returns("Doors,OK,OK,OK,OK,OK,OK,OK,OK,");
-            _fireAlarmManagerSub.GetStatus().Returns("FireAlarm,OK,OK,OK,OK,OK,OK,OK,OK,");
-
-
+            _iLightManagerSub.GetStatus().Returns("Lights,OK,OK,FAULT,OK,OK,OK,OK,OK,OK,OK,");
+            _iDoorManagerSub.GetStatus().Returns("Doors,OK,OK,OK,OK,OK,OK,OK,OK,");
+            _iFireAlarmManagerSub.GetStatus().Returns("FireAlarm,OK,OK,OK,OK,OK,OK,OK,OK,");
         }
+
+        private ILightManager _iLightManagerSub;
+        private IFireAlarmManager _iFireAlarmManagerSub;
+        private IDoorManager _iDoorManagerSub;
+        private WebService _webServiceSub;
+        private EmailService _emailServiceSub;
 
         [Test]
         public void GetStatusReport_All3Managers_ReturnStatuses()
         {
             // Arrange
-            var controller = new BuildingController("23", _lightManagerSub, _fireAlarmManagerSub, _doorManagerSub, _webServiceSub, _emailServiceSub);
-            
+            var controller = new BuildingController("23", _iLightManagerSub, _iFireAlarmManagerSub, _iDoorManagerSub,
+                _webServiceSub, _emailServiceSub);
+
             // Act
             var result = controller.GetStatusReport();
-            
+
             // Assert
-            Assert.AreEqual("Lights,OK,OK,FAULT,OK,OK,OK,OK,OK,OK,OK,Doors,OK,OK,OK,OK,OK,OK,OK,OK,FireAlarm,OK,OK,OK,OK,OK,OK,OK,OK,", result);
+            Assert.AreEqual(
+                "Lights,OK,OK,FAULT,OK,OK,OK,OK,OK,OK,OK,Doors,OK,OK,OK,OK,OK,OK,OK,OK,FireAlarm,OK,OK,OK,OK,OK,OK,OK,OK,",
+                result);
         }
     }
 
     [TestFixture]
     public class L3R4
     {
-        private LightManager _lightManagerSub;
-        private FireAlarmManager _fireAlarmManagerSub;
-        private DoorManager _doorManagerSub;
-        private WebService _webServiceSub;
-        private EmailService _emailServiceSub;
-
         [SetUp]
         public void SetUp()
         {
-            _lightManagerSub = Substitute.For<LightManager>();
-            _fireAlarmManagerSub = Substitute.For<FireAlarmManager>();
-            _doorManagerSub = Substitute.For<DoorManager>();
+            _iLightManagerSub = Substitute.For<ILightManager>();
+            _iFireAlarmManagerSub = Substitute.For<IFireAlarmManager>();
+            _iDoorManagerSub = Substitute.For<IDoorManager>();
             _webServiceSub = Substitute.For<WebService>();
             _emailServiceSub = Substitute.For<EmailService>();
         }
 
+        private ILightManager _iLightManagerSub;
+        private IFireAlarmManager _iFireAlarmManagerSub;
+        private IDoorManager _iDoorManagerSub;
+        private WebService _webServiceSub;
+        private EmailService _emailServiceSub;
+
         [Test]
-        public void SetCurrentState_ToOpen_CallsOpenAllDoors_WhenDoorManagerIsNotNull()
+        public void SetCurrentState_ToOpen_CallsOpenAllDoors_WhenIDoorManagerIsNotNull()
         {
             // Arrange
-            var buildingController = new BuildingController("23", _lightManagerSub, _fireAlarmManagerSub, _doorManagerSub, _webServiceSub, _emailServiceSub);
+            var buildingController = new BuildingController("23", _iLightManagerSub, _iFireAlarmManagerSub,
+                _iDoorManagerSub, _webServiceSub, _emailServiceSub);
 
             // Act
             buildingController.SetCurrentState("open");
 
             // Assert
-            _doorManagerSub.Received().OpenAllDoors();
+            _iDoorManagerSub.Received().OpenAllDoors();
         }
-
     }
 
     [TestFixture]
     public class L3R5
     {
-        private LightManager _lightManagerSub;
-        private FireAlarmManager _fireAlarmManagerSub;
-        private DoorManager _doorManagerSub;
-        private WebService _webServiceSub;
-        private EmailService _emailServiceSub;
-
         [SetUp]
         public void SetUp()
         {
-            _lightManagerSub = Substitute.For<LightManager>();
-            _fireAlarmManagerSub = Substitute.For<FireAlarmManager>();
-            _doorManagerSub = Substitute.For<DoorManager>();
+            _iLightManagerSub = Substitute.For<ILightManager>();
+            _iFireAlarmManagerSub = Substitute.For<IFireAlarmManager>();
+            _iDoorManagerSub = Substitute.For<IDoorManager>();
             _webServiceSub = Substitute.For<WebService>();
             _emailServiceSub = Substitute.For<EmailService>();
+            
+            _iDoorManagerSub.OpenAllDoors().Returns(true);
         }
 
+        private ILightManager _iLightManagerSub;
+        private IFireAlarmManager _iFireAlarmManagerSub;
+        private IDoorManager _iDoorManagerSub;
+        private WebService _webServiceSub;
+        private EmailService _emailServiceSub;
+
+        
 
         [Test]
         public void SetCurrentState_ToOpen_WhenDoorsSuccessfullyOpen_ReturnsTrueAndChangesState()
         {
             // Arrange
-            var _buildingController = new BuildingController("23", _lightManagerSub, _fireAlarmManagerSub, _doorManagerSub, _webServiceSub, _emailServiceSub);
+            var buildingController = new BuildingController("23", _iLightManagerSub, _iFireAlarmManagerSub,
+                _iDoorManagerSub, _webServiceSub, _emailServiceSub);
 
 
             // Act
-            var result = _buildingController.SetCurrentState("open");
+            var result = buildingController.SetCurrentState("open");
 
             // Assert
             Assert.IsTrue(result, "SetCurrentState should return true when transitioning to 'open' is successful.");
-            Assert.AreEqual("open", _buildingController.GetCurrentState(), "The building state should be 'open' after successfully opening doors.");
+            Assert.AreEqual("open", buildingController.GetCurrentState(),
+                "The building state should be 'open' after successfully opening doors.");
         }
     }
 }
@@ -623,99 +644,104 @@ namespace L4
     [TestFixture]
     public class L4R1
     {
-        private LightManager _lightManagerSub;
-        private FireAlarmManager _fireAlarmManagerSub;
-        private DoorManager _doorManagerSub;
-        private WebService _webServiceSub;
-        private EmailService _emailServiceSub;
-
         [SetUp]
         public void SetUp()
         {
-            _lightManagerSub = Substitute.For<LightManager>();
-            _fireAlarmManagerSub = Substitute.For<FireAlarmManager>();
-            _doorManagerSub = Substitute.For<DoorManager>();
+            _iLightManagerSub = Substitute.For<ILightManager>();
+            _iFireAlarmManagerSub = Substitute.For<IFireAlarmManager>();
+            _iDoorManagerSub = Substitute.For<IDoorManager>();
             _webServiceSub = Substitute.For<WebService>();
             _emailServiceSub = Substitute.For<EmailService>();
         }
+
+        private ILightManager _iLightManagerSub;
+        private IFireAlarmManager _iFireAlarmManagerSub;
+        private IDoorManager _iDoorManagerSub;
+        private WebService _webServiceSub;
+        private EmailService _emailServiceSub;
 
         [Test]
         public void SetCurrentState_ToClose_CallsCloseAllDoors()
         {
             // Arrange
-            var buildingController = new BuildingController("23", _lightManagerSub, _fireAlarmManagerSub, _doorManagerSub, _webServiceSub, _emailServiceSub);
+            var buildingController = new BuildingController("23", _iLightManagerSub, _iFireAlarmManagerSub,
+                _iDoorManagerSub, _webServiceSub, _emailServiceSub);
 
             // Act
-            buildingController.SetCurrentState("open");
+            buildingController.SetCurrentState("close");
 
             // Assert
-            _doorManagerSub.Received().LockAllDoors();
+            _iDoorManagerSub.Received().LockAllDoors();
         }
 
         [Test]
         public void SetCurrentState_ToClose_CallsCloseAllLights()
         {
             // Arrange
-            var buildingController = new BuildingController("23", _lightManagerSub, _fireAlarmManagerSub, _doorManagerSub, _webServiceSub, _emailServiceSub);
+            var buildingController = new BuildingController("23", _iLightManagerSub, _iFireAlarmManagerSub,
+                _iDoorManagerSub, _webServiceSub, _emailServiceSub);
 
             // Act
             buildingController.SetCurrentState("close");
 
             // Assert
-            _lightManagerSub.Received().SetAllLights(false);
+            _iLightManagerSub.Received().SetAllLights(false);
         }
     }
 
     [TestFixture]
     public class L4R2
     {
-        private LightManager _lightManagerSub;
-        private FireAlarmManager _fireAlarmManagerSub;
-        private DoorManager _doorManagerSub;
-        private WebService _webServiceSub;
-        private EmailService _emailServiceSub;
-
         [SetUp]
         public void SetUp()
         {
-            _lightManagerSub = Substitute.For<LightManager>();
-            _fireAlarmManagerSub = Substitute.For<FireAlarmManager>();
-            _doorManagerSub = Substitute.For<DoorManager>();
+            _iLightManagerSub = Substitute.For<ILightManager>();
+            _iFireAlarmManagerSub = Substitute.For<IFireAlarmManager>();
+            _iDoorManagerSub = Substitute.For<IDoorManager>();
             _webServiceSub = Substitute.For<WebService>();
             _emailServiceSub = Substitute.For<EmailService>();
         }
+
+        private ILightManager _iLightManagerSub;
+        private IFireAlarmManager _iFireAlarmManagerSub;
+        private IDoorManager _iDoorManagerSub;
+        private WebService _webServiceSub;
+        private EmailService _emailServiceSub;
 
         [Test]
         public void SetCurrentState_ToFireAlarm_CallsOpenAllDoors()
         {
             // Arrange
-            var buildingController = new BuildingController("23", _lightManagerSub, _fireAlarmManagerSub, _doorManagerSub, _webServiceSub, _emailServiceSub);
+            var buildingController = new BuildingController("23", _iLightManagerSub, _iFireAlarmManagerSub,
+                _iDoorManagerSub, _webServiceSub, _emailServiceSub);
 
             // Act
             buildingController.SetCurrentState("fire alarm");
 
             // Assert
-            _doorManagerSub.Received().OpenAllDoors();
+            _iDoorManagerSub.Received().OpenAllDoors();
         }
 
         [Test]
         public void SetCurrentState_ToFireAlarm_CallsSetAllLightsTrue()
         {
             // Arrange
-            var buildingController = new BuildingController("23", _lightManagerSub, _fireAlarmManagerSub, _doorManagerSub, _webServiceSub, _emailServiceSub);
+            var buildingController = new BuildingController("23", _iLightManagerSub, _iFireAlarmManagerSub,
+                _iDoorManagerSub, _webServiceSub, _emailServiceSub);
 
             // Act
             buildingController.SetCurrentState("fire alarm");
 
             // Assert
-            _lightManagerSub.Received().SetAllLights(true);
+            _iLightManagerSub.Received().SetAllLights(true);
         }
 
         [Test]
         public void SetCurrentState_ToFireAlarm_CallsWebServiceLogFireAlarm()
         {
             // Arrange
-            var buildingController = new BuildingController("23", _lightManagerSub, _fireAlarmManagerSub, _doorManagerSub, _webServiceSub, _emailServiceSub);
+            var buildingController = new BuildingController("23", _iLightManagerSub, _iFireAlarmManagerSub,
+                _iDoorManagerSub, _webServiceSub, _emailServiceSub);
 
             // Act
             buildingController.SetCurrentState("fire alarm");
@@ -728,21 +754,21 @@ namespace L4
     [TestFixture]
     public class L4R3
     {
-        private LightManager _lightManagerSub;
-        private FireAlarmManager _fireAlarmManagerSub;
-        private DoorManager _doorManagerSub;
-        private WebService _webServiceSub;
-        private EmailService _emailServiceSub;
-
         [SetUp]
         public void SetUp()
         {
-            _lightManagerSub = Substitute.For<LightManager>();
-            _fireAlarmManagerSub = Substitute.For<FireAlarmManager>();
-            _doorManagerSub = Substitute.For<DoorManager>();
+            _iLightManagerSub = Substitute.For<ILightManager>();
+            _iFireAlarmManagerSub = Substitute.For<IFireAlarmManager>();
+            _iDoorManagerSub = Substitute.For<IDoorManager>();
             _webServiceSub = Substitute.For<WebService>();
             _emailServiceSub = Substitute.For<EmailService>();
         }
+
+        private ILightManager _iLightManagerSub;
+        private IFireAlarmManager _iFireAlarmManagerSub;
+        private IDoorManager _iDoorManagerSub;
+        private WebService _webServiceSub;
+        private EmailService _emailServiceSub;
 
         [TestCase("Lights,OK,", "Doors,OK,", "FireAlarm,OK,", "")]
         [TestCase("Lights,FAULT,", "Doors,OK,", "FireAlarm,OK,", "Lights,")]
@@ -752,71 +778,73 @@ namespace L4
         [TestCase("Lights,OK,", "Doors,FAULT,", "FireAlarm,FAULT,", "Doors,FireAlarm,")]
         [TestCase("Lights,FAULT,", "Doors,FAULT,", "FireAlarm,FAULT,", "Lights,Doors,FireAlarm,")]
         [TestCase("Lights,FAULT,", "Doors,OK,", "FireAlarm,FAULT,", "Lights,FireAlarm,")]
-        public void GetStatusReport_AutomaticallySendsReport_CorrectnessOfArgs(string lightCase, string doorCase, string FireAlarmCase, string expectedArgs)
+        public void GetStatusReport_AutomaticallySendsReport_CorrectnessOfArgs(string lightCase, string doorCase,
+            string FireAlarmCase, string expectedArgs)
         {
             // Arrange
-            var buildingController = new BuildingController("23", _lightManagerSub, _fireAlarmManagerSub, _doorManagerSub, _webServiceSub, _emailServiceSub);
-            _lightManagerSub.GetStatus().Returns(lightCase);
-            _doorManagerSub.GetStatus().Returns(doorCase);
-            _fireAlarmManagerSub.GetStatus().Returns(FireAlarmCase);
+            var buildingController = new BuildingController("23", _iLightManagerSub, _iFireAlarmManagerSub,
+                _iDoorManagerSub, _webServiceSub, _emailServiceSub);
+            _iLightManagerSub.GetStatus().Returns(lightCase);
+            _iDoorManagerSub.GetStatus().Returns(doorCase);
+            _iFireAlarmManagerSub.GetStatus().Returns(FireAlarmCase);
 
             // Act
-            var result = buildingController._detectErrorsAndCreateLogDetails(_lightManagerSub.GetStatus(), _doorManagerSub.GetStatus(), _fireAlarmManagerSub.GetStatus());
+            var result = buildingController._detectErrorsAndCreateLogDetails(_iLightManagerSub.GetStatus(),
+                _iDoorManagerSub.GetStatus(), _iFireAlarmManagerSub.GetStatus());
 
             // Assert
             Assert.AreEqual(expectedArgs, result);
-
         }
 
         [Test]
         public void GetStatusReport_AutomaticallySendsReport_WebServiceIsCalled()
         {
             // Arrange
-            var buildingController = new BuildingController("23", _lightManagerSub, _fireAlarmManagerSub, _doorManagerSub, _webServiceSub, _emailServiceSub);
+            var buildingController = new BuildingController("23", _iLightManagerSub, _iFireAlarmManagerSub,
+                _iDoorManagerSub, _webServiceSub, _emailServiceSub);
 
             // Act
             buildingController.GetStatusReport();
 
             // Assert
             _webServiceSub.Received(1).LogEngineerRequired("");
-
         }
     }
 
     [TestFixture]
     public class L4R4
     {
-
-        private LightManager _lightManagerSub;
-        private FireAlarmManager _fireAlarmManagerSub;
-        private DoorManager _doorManagerSub;
-        private WebService _webServiceSub;
-        private EmailService _emailServiceSub;
-
         [SetUp]
         public void SetUp()
         {
-            _lightManagerSub = Substitute.For<LightManager>();
-            _fireAlarmManagerSub = Substitute.For<FireAlarmManager>();
-            _doorManagerSub = Substitute.For<DoorManager>();
+            _iLightManagerSub = Substitute.For<ILightManager>();
+            _iFireAlarmManagerSub = Substitute.For<IFireAlarmManager>();
+            _iDoorManagerSub = Substitute.For<IDoorManager>();
             _webServiceSub = Substitute.For<WebService>();
             _emailServiceSub = Substitute.For<EmailService>();
         }
+
+        private ILightManager _iLightManagerSub;
+        private IFireAlarmManager _iFireAlarmManagerSub;
+        private IDoorManager _iDoorManagerSub;
+        private WebService _webServiceSub;
+        private EmailService _emailServiceSub;
 
         [Test]
         public void GetStatusReport_WhenLogFireAlarmThrows_CallsSendEmail()
         {
             // Arrange
             var exceptionMessage = "Logging failed";
-            var buildingController = new BuildingController("23", _lightManagerSub, _fireAlarmManagerSub, _doorManagerSub, _webServiceSub, _emailServiceSub);
+            var buildingController = new BuildingController("23", _iLightManagerSub, _iFireAlarmManagerSub,
+                _iDoorManagerSub, _webServiceSub, _emailServiceSub);
             _webServiceSub.When(x => x.LogFireAlarm("fire alarm")).Do(x => throw new Exception(exceptionMessage));
 
             // Act
             buildingController.GetStatusReport();
 
             // Assert
-            _emailServiceSub.Received(1).SendEmail("smartbuilding@uclan.ac.uk", "failed to log alarm", exceptionMessage);
+            _emailServiceSub.Received(1)
+                .SendEmail("smartbuilding@uclan.ac.uk", "failed to log alarm", exceptionMessage);
         }
     }
-    
 }
